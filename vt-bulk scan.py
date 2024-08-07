@@ -16,7 +16,7 @@ VT_URLS = {
     'ip': 'https://www.virustotal.com/api/v3/ip_addresses/',
     'url': 'https://www.virustotal.com/api/v3/urls/'
 }
-MAX_REQUESTS_PER_MINUTE = 4  # Set this based on your API key limit
+MAX_REQUESTS_PER_MINUTE = 1000  # Set this based on your API key limit
 
 # Thread-safe iterator for API keys
 api_key_lock = threading.Lock()
