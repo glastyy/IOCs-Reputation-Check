@@ -9,23 +9,27 @@ import argparse
 import base64
 
 # Constants
-API_KEYS = ['API_KEY_1','API_KEY_2']  # Add more API keys as needed
+VT_API_KEYS = ['VT_API_1','VT_API_2']  # Add more VirusTotal API keys as needed
+ABUSEIPDB_API_KEYS = ['AbuseIPDB_API_1','AbuseIPDB_API_2']  # Add more AbuseIPDB API keys as needed
 VT_URLS = {
     'file': 'https://www.virustotal.com/api/v3/files/',
     'domain': 'https://www.virustotal.com/api/v3/domains/',
     'ip': 'https://www.virustotal.com/api/v3/ip_addresses/',
     'url': 'https://www.virustotal.com/api/v3/urls/'
 }
-MAX_REQUESTS_PER_MINUTE = 1000  # Set this based on your API key limit
+MAX_REQUESTS_PER_MINUTE = 1000  # Set this based on your VirusTotal API key limit
 
-# Thread-safe iterator for API keys
-api_key_lock = threading.Lock()
-api_key_cycle = itertools.cycle(API_KEYS)
+# Thread-safe iterators for API keys
+vt_api_key_lock = threading.Lock()
+vt_api_key_cycle = itertools.cycle(VT_API_KEYS)
+
+abuseipdb_api_key_lock = threading.Lock()
+abuseipdb_api_key_cycle = itertools.cycle(ABUSEIPDB_API_KEYS)
 
 
 def get_vt_report(ioc, ioc_type):
-    with api_key_lock:
-        api_key = next(api_key_cycle)
+    with vt_api_key_lock:
+        api_key = next(vt_api_key_cycle)
 
     headers = {
         "x-apikey": api_key
@@ -85,6 +89,29 @@ def clean_and_validate_ioc(ioc):
     return cleaned_ioc
 
 
+def get_abuseipdb_score(ip):
+    with abuseipdb_api_key_lock:
+        api_key = next(abuseipdb_api_key_cycle)
+
+    url = f'https://api.abuseipdb.com/api/v2/check'
+    headers = {
+        'Accept': 'application/json',
+        'Key': api_key
+    }
+    params = {
+        'ipAddress': ip,
+        'maxAgeInDays': 90
+    }
+    response = requests.get(url, headers=headers, params=params)
+
+    if response.status_code == 200:
+        data = response.json()
+        return data['data']['abuseConfidenceScore']
+    else:
+        print(f"Error {response.status_code} from AbuseIPDB: {response.text}")
+        return None
+
+
 def process_ioc(index, ioc):
     ioc = clean_and_validate_ioc(ioc)
     if not ioc:
@@ -97,7 +124,8 @@ def process_ioc(index, ioc):
             'Score': 'Invalid',
             'Microsoft Detection': 'Invalid',
             'Crowdstrike Detection': 'Invalid',
-            'SentinelOne Detection': 'Invalid'
+            'SentinelOne Detection': 'Invalid',
+            'AbuseIPDB Score': 'Invalid'
         }
 
     ioc_type = determine_ioc_type(ioc)
@@ -121,6 +149,10 @@ def process_ioc(index, ioc):
         crowdstrike_detection = check_crowdstrike_detection(scans)
         sentinelone_detection = check_sentinelone_detection(scans)
 
+        abuseipdb_score = None
+        if ioc_type == 'ip':
+            abuseipdb_score = get_abuseipdb_score(ioc)
+
         return {
             'Index': index,
             'Input': ioc,
@@ -130,7 +162,8 @@ def process_ioc(index, ioc):
             'Score': score,
             'Microsoft Detection': microsoft_detection,
             'Crowdstrike Detection': crowdstrike_detection,
-            'SentinelOne Detection': sentinelone_detection
+            'SentinelOne Detection': sentinelone_detection,
+            'AbuseIPDB Score': abuseipdb_score
         }
     else:
         return {
@@ -142,7 +175,8 @@ def process_ioc(index, ioc):
             'Score': 'Not found',
             'Microsoft Detection': 'Not found',
             'Crowdstrike Detection': 'Not found',
-            'SentinelOne Detection': 'Not found'
+            'SentinelOne Detection': 'Not found',
+            'AbuseIPDB Score': 'Not found'
         }
 
 
@@ -194,7 +228,7 @@ if __name__ == "__main__":
     num_threads = args.threads
 
     # Ensure the number of threads does not exceed the API key limits
-    max_possible_threads = len(API_KEYS) * MAX_REQUESTS_PER_MINUTE
+    max_possible_threads = len(VT_API_KEYS) * MAX_REQUESTS_PER_MINUTE
     if num_threads > max_possible_threads:
         print(
             f"Warning: Number of threads exceeds the limit based on API keys and rate limit. Using {max_possible_threads} threads instead.")
