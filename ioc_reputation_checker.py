@@ -9,8 +9,8 @@ import argparse
 import base64
 
 # Constants
-VT_API_KEYS = ['VT_API_1','VT_API_2']  # Add more VirusTotal API keys as needed
-ABUSEIPDB_API_KEYS = ['AbuseIPDB_API_1','AbuseIPDB_API_2']  # Add more AbuseIPDB API keys as needed
+VT_API_KEYS = ['VT_API_1','VT_API_2', 'VT_API_3']  # Add more VirusTotal API keys as needed
+ABUSEIPDB_API_KEYS = ['AbuseIPDB_API_1','AbuseIPDB_API_2','AbuseIPDB_API_3']  # Add more AbuseIPDB API keys as needed
 VT_URLS = {
     'file': 'https://www.virustotal.com/api/v3/files/',
     'domain': 'https://www.virustotal.com/api/v3/domains/',
@@ -61,17 +61,17 @@ def determine_ioc_type(ioc):
 
 
 def check_crowdstrike_detection(scans):
-    if 'CrowdStrike Falcon' in scans and scans['CrowdStrike Falcon']['category'] == 'malicious':
-        return 'Yes'
-    else:
-        return 'No'
+    for engine in scans:
+        if "crowdstrike" in engine.lower() and scans[engine]['category'] == 'malicious':
+            return 'Yes'
+    return 'No'
 
 
 def check_sentinelone_detection(scans):
-    if 'SentinelOne' in scans and scans['SentinelOne']['category'] == 'malicious':
-        return 'Yes'
-    else:
-        return 'No'
+    for engine in scans:
+        if "sentinelone" in engine.lower() and scans[engine]['category'] == 'malicious':
+            return 'Yes'
+    return 'No'
 
 
 def clean_and_validate_ioc(ioc):
