@@ -22,7 +22,7 @@ The **IOC Reputation Checker** is a Python script designed to automate the proce
 Install the required packages using pip:
 
 ```bash
-pip install pandas requests tqdm openpyxl
+pip install -r requirements.txt
 ```
 
 ### Script Overview
