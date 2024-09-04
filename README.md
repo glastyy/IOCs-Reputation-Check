@@ -2,7 +2,7 @@
 
 ## About
 
-The **IOC Reputation Checker** is a Python script designed to automate the process of checking the reputation of various Indicators of Compromise (IOCs) such as files, domains, IP addresses, and URLs. The script leverages VirusTotal and AbuseIPDB APIs to gather reputation data, which can be invaluable for cybersecurity professionals during threat hunting, incident response.
+The **IOC Reputation Checker** is a Python script designed to automate the process of checking the reputation of various Indicators of Compromise (IOCs) such as hash, domains, IP addresses, and URLs. The script leverages VirusTotal and AbuseIPDB APIs to gather reputation data, which can be invaluable for cybersecurity professionals during threat hunting, incident response.
 
 ## Features
 
